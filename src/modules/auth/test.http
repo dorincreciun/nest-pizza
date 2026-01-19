@@ -1,9 +1,64 @@
 ### Variabile Globale
 @baseUrl = http://localhost:3000
-@email = dorin@pizza.com
+@email = creciun@pizza.com
 @password = ParolaComplexa123!
+@username = dorin_pizzaboy
 
-### 1. LOGIN REUȘIT (Happy Path)
+### 1. REGISTER - Succes (Happy Path)
+# @name registerSuccess
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "username": "{{username}}",
+  "password": "{{password}}"
+}
+
+> {%
+  client.test("Înregistrare cu succes", function() {
+    client.assert(response.status === 201, "Statusul trebuie să fie 201 Created");
+    client.assert(response.body.tokens.accessToken, "Lipsește Access Token");
+    client.assert(response.body.user.email === "{{email}}", "Email-ul nu coincide");
+    client.assert(!response.body.user.password, "ALERTA: Parola a fost expusă!");
+  });
+%}
+
+### 2. REGISTER - Eroare: Email deja existent (Conflict)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "username": "alt_username",
+  "password": "{{password}}"
+}
+
+> {%
+  client.test("Eroare email duplicat", function() {
+    client.assert(response.status === 409, "Trebuie să returneze 409 Conflict");
+  });
+%}
+
+### 3. REGISTER - Eroare: Validare DTO (Email invalid)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "nu-este-email",
+  "username": "us",
+  "password": "123"
+}
+
+> {%
+  client.test("Eroare validare DTO", function() {
+    client.assert(response.status === 400, "Trebuie să returneze 400 Bad Request");
+  });
+%}
+
+### -------------------------------------------------------
+
+### 4. LOGIN - Succes (După register)
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -13,44 +68,8 @@ Content-Type: application/json
 }
 
 > {%
-    client.test("Login de succes", function() {
-        client.assert(response.status === 201, "Statusul trebuie să fie 201 Created");
-
-        // CORECTAT: Accesăm response.body.tokens (pentru că așa ai scris în Service)
-        client.assert(response.body.tokens.accessToken, "Trebuie să existe un Access Token");
-        client.assert(response.body.tokens.refreshToken, "Trebuie să existe un Refresh Token");
-
-        // Verificăm și datele userului
-        client.assert(response.body.user.email === "{{email}}", "Email-ul returnat nu coincide");
-
-        // Verificăm securitatea (să nu fi uitat parola în obiect)
-        client.assert(!response.body.user.password, "ALERTA SECURITATE: Parola a fost expusă în body!");
-    });
+  client.test("Login reușit", function() {
+    client.assert(response.status === 201, "Status 201");
+    client.assert(response.body.tokens.refreshToken, "Trebuie să avem Refresh Token");
+  });
 %}
-
-### 2. LOGIN EȘUAT - Parolă Greșită
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "email": "{{email}}",
-  "password": "parola_gresita"
-}
-
-### 3. LOGIN EȘUAT - Email Inexistent
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "email": "nu_exist@pizza.com",
-  "password": "{{password}}"
-}
-
-### 4. VALIDARE DTO - Email invalid
-POST {{baseUrl}}/auth/login
-Content-Type: application/json
-
-{
-  "email": "nu-este-email",
-  "password": "{{password}}"
-}

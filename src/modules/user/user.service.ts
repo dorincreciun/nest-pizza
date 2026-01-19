@@ -1,7 +1,8 @@
-import {Injectable} from '@nestjs/common';
-import {DatabaseService} from "../database/database.service";
-import {UserEntity} from "./entity/user.entity";
-import * as bcrypt from "bcrypt"
+import { Injectable } from '@nestjs/common';
+import { DatabaseService } from '../database/database.service';
+import { UserEntity } from './entity/user.entity';
+import * as bcrypt from 'bcrypt';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
 export class UserService {
@@ -31,7 +32,19 @@ export class UserService {
         return rows.length > 0 ? rows[0] : null;
     }
 
-    async createUser(): Promise<void> {
+    async createUser(user: CreateUserDto): Promise<UserEntity> {
+        const query = `
+            INSERT INTO users(username, email, password)
+            VALUES($1, $2, $3)
+            RETURNING id, email, username
+        `
+        const rows = await this.databaseService.query<UserEntity>(query, [user.username, user.email, user.password]);
+
+        if (!rows || rows.length === 0) {
+            throw new Error('Eroare la crearea utilizatorului în baza de date');
+        }
+
+        return rows[0];
     }
 
     async updateUser(): Promise<void> {
@@ -40,14 +53,17 @@ export class UserService {
     async getUserProfile(): Promise<void> {
     }
 
-    async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
-        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
+    async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
+        const valueToSave = refreshToken
+          ? await bcrypt.hash(refreshToken, 10)
+          : null;
 
         const query = `
-            UPDATE users 
-            SET hashed_refresh_token = $1 
+            UPDATE users
+            SET hashed_refresh_token = $1
             WHERE id = $2
-        `
-        await this.databaseService.query(query, [refreshToken, userId])
+        `;
+
+        await this.databaseService.query(query, [valueToSave, userId]);
     }
 }
