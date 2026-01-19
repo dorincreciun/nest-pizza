@@ -28,9 +28,10 @@ export class AuthService {
 
         await this.userService.updateRefreshToken(user.id, tokens.refreshToken)
 
+        const { password, ...safeUser } = user;
         return {
             tokens,
-            user
-        }
+            user: safeUser
+        };
     }
 }

@@ -1,0 +1,56 @@
+### Variabile Globale
+@baseUrl = http://localhost:3000
+@email = dorin@pizza.com
+@password = ParolaComplexa123!
+
+### 1. LOGIN REUȘIT (Happy Path)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+> {%
+    client.test("Login de succes", function() {
+        client.assert(response.status === 201, "Statusul trebuie să fie 201 Created");
+
+        // CORECTAT: Accesăm response.body.tokens (pentru că așa ai scris în Service)
+        client.assert(response.body.tokens.accessToken, "Trebuie să existe un Access Token");
+        client.assert(response.body.tokens.refreshToken, "Trebuie să existe un Refresh Token");
+
+        // Verificăm și datele userului
+        client.assert(response.body.user.email === "{{email}}", "Email-ul returnat nu coincide");
+
+        // Verificăm securitatea (să nu fi uitat parola în obiect)
+        client.assert(!response.body.user.password, "ALERTA SECURITATE: Parola a fost expusă în body!");
+    });
+%}
+
+### 2. LOGIN EȘUAT - Parolă Greșită
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "parola_gresita"
+}
+
+### 3. LOGIN EȘUAT - Email Inexistent
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "nu_exist@pizza.com",
+  "password": "{{password}}"
+}
+
+### 4. VALIDARE DTO - Email invalid
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "nu-este-email",
+  "password": "{{password}}"
+}

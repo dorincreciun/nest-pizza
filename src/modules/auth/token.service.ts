@@ -27,6 +27,8 @@ export class TokenService {
             this.generateRefreshToken(payload)
         ])
 
+        console.dir(accessToken, refreshToken)
+
         return {
             accessToken,
             refreshToken
