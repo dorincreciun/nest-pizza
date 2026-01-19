@@ -1,14 +1,14 @@
 import {Injectable, UnauthorizedException} from '@nestjs/common';
-import {ConfigService} from "@nestjs/config";
 import {LoginDto} from "./dto/login.dto";
 import {UserService} from "../user/user.service";
 import * as bcrypt from "bcrypt"
+import {TokenService} from "./token.service";
 
 @Injectable()
 export class AuthService {
     constructor(
-        private readonly configService: ConfigService,
         private readonly userService: UserService,
+        private readonly tokenService: TokenService,
     ) {
     }
 
@@ -19,6 +19,18 @@ export class AuthService {
 
         if (!user || !isPasswordValid) {
             throw new UnauthorizedException('Email-ul sau parola sunt incorecte');
+        }
+
+        const tokens = await this.tokenService.generateTokens({
+            sub: user.id,
+            email: user.email
+        })
+
+        await this.userService.updateRefreshToken(user.id, tokens.refreshToken)
+
+        return {
+            tokens,
+            user
         }
     }
 }

@@ -1,6 +1,7 @@
 import {Injectable} from '@nestjs/common';
 import {DatabaseService} from "../database/database.service";
 import {UserEntity} from "./entity/user.entity";
+import * as bcrypt from "bcrypt"
 
 @Injectable()
 export class UserService {
@@ -39,6 +40,14 @@ export class UserService {
     async getUserProfile(): Promise<void> {
     }
 
-    async updateRefreshToken(): Promise<void> {
+    async updateRefreshToken(userId: string, refreshToken: string): Promise<void> {
+        const hashedRefreshToken = await bcrypt.hash(refreshToken, 10)
+
+        const query = `
+            UPDATE users 
+            SET hashed_refresh_token = $1 
+            WHERE id = $2
+        `
+        await this.databaseService.query(query, [refreshToken, userId])
     }
 }
