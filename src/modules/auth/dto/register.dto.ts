@@ -1,19 +1,39 @@
 import { IsEmail, IsNotEmpty, IsString, MinLength, Matches } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { AUTH_MESSAGES, PASSWORD_MIN_LENGTH, PASSWORD_REGEX } from '../constants/auth.constants';
 
 export class RegisterDto {
-    @IsNotEmpty({ message: 'Username-ul este obligatoriu' })
+    @ApiProperty({
+        example: 'dorin_pizzaboy',
+        description: 'Numele unic al utilizatorului',
+    })
+    @IsNotEmpty({ message: AUTH_MESSAGES.VALIDATION.USERNAME_REQUIRED })
     @IsString()
     username: string;
 
-    @IsNotEmpty({ message: 'Email-ul este obligatoriu' })
-    @IsEmail({}, { message: 'Te rugăm să introduci o adresă de email validă' })
+    @ApiProperty({
+        example: 'creciun@pizza.com',
+        description: 'Adresa de email unică a utilizatorului',
+    })
+    @IsNotEmpty({ message: AUTH_MESSAGES.VALIDATION.EMAIL_REQUIRED })
+    @IsEmail({}, { message: AUTH_MESSAGES.VALIDATION.EMAIL_INVALID })
     email: string;
 
-    @IsNotEmpty({ message: 'Parola este obligatorie' })
+    @ApiProperty({
+        example: 'ParolaComplexa123!',
+        description: 'Parola puternică (minim 8 caractere, litere mari, mici, cifre/simboluri)',
+        minLength: PASSWORD_MIN_LENGTH.REGISTER,
+    })
+    @IsNotEmpty({ message: AUTH_MESSAGES.VALIDATION.PASSWORD_REQUIRED })
     @IsString()
-    @MinLength(8, { message: 'Parola trebuie să aibă cel puțin 8 caractere' })
-    @Matches(/((?=.*\d)|(?=.*\W+))(?![.\n])(?=.*[A-Z])(?=.*[a-z]).*$/, {
-        message: 'Parola este prea slabă (trebuie să conțină litere mari, mici și cifre/simboluri)',
+    @MinLength(PASSWORD_MIN_LENGTH.REGISTER, {
+        message: AUTH_MESSAGES.VALIDATION.PASSWORD_MIN_LENGTH.replace(
+            '{min}',
+            PASSWORD_MIN_LENGTH.REGISTER.toString()
+        ),
+    })
+    @Matches(PASSWORD_REGEX, {
+        message: AUTH_MESSAGES.VALIDATION.PASSWORD_WEAK,
     })
     password: string;
 }
