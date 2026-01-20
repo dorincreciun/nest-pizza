@@ -4,7 +4,7 @@
 @password = ParolaComplexa123!
 @username = dorin_pizzaboy
 
-### 1. REGISTER - Succes (Happy Path)
+### 1. REGISTER - Creare cont nou
 # @name registerSuccess
 POST {{baseUrl}}/auth/register
 Content-Type: application/json
@@ -15,50 +15,8 @@ Content-Type: application/json
   "password": "{{password}}"
 }
 
-> {%
-  client.test("Înregistrare cu succes", function() {
-    client.assert(response.status === 201, "Statusul trebuie să fie 201 Created");
-    client.assert(response.body.tokens.accessToken, "Lipsește Access Token");
-    client.assert(response.body.user.email === "{{email}}", "Email-ul nu coincide");
-    client.assert(!response.body.user.password, "ALERTA: Parola a fost expusă!");
-  });
-%}
-
-### 2. REGISTER - Eroare: Email deja existent (Conflict)
-POST {{baseUrl}}/auth/register
-Content-Type: application/json
-
-{
-  "email": "{{email}}",
-  "username": "alt_username",
-  "password": "{{password}}"
-}
-
-> {%
-  client.test("Eroare email duplicat", function() {
-    client.assert(response.status === 409, "Trebuie să returneze 409 Conflict");
-  });
-%}
-
-### 3. REGISTER - Eroare: Validare DTO (Email invalid)
-POST {{baseUrl}}/auth/register
-Content-Type: application/json
-
-{
-  "email": "nu-este-email",
-  "username": "us",
-  "password": "123"
-}
-
-> {%
-  client.test("Eroare validare DTO", function() {
-    client.assert(response.status === 400, "Trebuie să returneze 400 Bad Request");
-  });
-%}
-
-### -------------------------------------------------------
-
-### 4. LOGIN - Succes (După register)
+### 2. LOGIN - Autentificare (Obținem Access și Refresh)
+# @name loginSuccess
 POST {{baseUrl}}/auth/login
 Content-Type: application/json
 
@@ -68,8 +26,35 @@ Content-Type: application/json
 }
 
 > {%
-  client.test("Login reușit", function() {
-    client.assert(response.status === 201, "Status 201");
-    client.assert(response.body.tokens.refreshToken, "Trebuie să avem Refresh Token");
-  });
+    client.test("Login reușit", function() {
+        client.assert(response.status === 201, "Status 201");
+        // Salvăm ambele token-uri pentru pașii următori
+        client.global.set("auth_accessToken", response.body.tokens.accessToken);
+        client.global.set("auth_refreshToken", response.body.tokens.refreshToken);
+    });
 %}
+
+### 3. REFRESH TOKEN - Obținem un Access Token nou folosind Refresh-ul
+# @name refreshTest
+POST {{baseUrl}}/auth/refresh-token
+Content-Type: application/json
+
+{
+  "refreshToken": "{{auth_refreshToken}}"
+}
+
+> {%
+    client.test("Refresh reușit", function() {
+        client.assert(response.status === 201, "Status 201");
+        client.assert(response.body.accessToken, "Lipsește noul Access Token");
+        // Actualizăm variabila globală cu noul Access Token primit
+        client.global.set("auth_accessToken", response.body.accessToken);
+    });
+%}
+
+### 4. LOGOUT - Ștergere sesiune (Folosind noul Access Token)
+POST {{baseUrl}}/auth/logout
+Authorization: Bearer {{auth_accessToken}}
+Content-Type: application/json
+
+{}

@@ -73,4 +73,29 @@ export class AuthService {
             message: 'Deconectare reușită!'
         };
     }
+
+    async refreshToken(rft: string) {
+        const payload = await this.tokenService.verifyRefreshToken(rft);
+
+        if (!payload) {
+            throw new UnauthorizedException("Refresh Token invalid sau expirat!");
+        }
+
+        const isValid = await this.userService.isRefreshTokenValid(payload.sub, rft);
+
+        if (!isValid) {
+            throw new UnauthorizedException("Sesiune invalidă. Vă rugăm să vă logați din nou.");
+        }
+
+        const newPayload = {
+            sub: payload.sub,
+            email: payload.email
+        };
+
+        const tokens = await this.tokenService.generateTokens(newPayload);
+
+        await this.userService.updateRefreshToken(payload.sub, tokens.refreshToken);
+
+        return tokens;
+    }
 }

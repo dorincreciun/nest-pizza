@@ -13,6 +13,9 @@ export class AuthGuard implements CanActivate {
         if (!token) throw new UnauthorizedException('Token lipsă');
 
         const payload = await this.tokenService.verifyAccessToken(token);
+
+        if(!payload) throw new UnauthorizedException("Access Token invalid sau expirat !")
+
         request['user'] = payload;
 
         return true;

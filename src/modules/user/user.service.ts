@@ -66,4 +66,26 @@ export class UserService {
 
         await this.databaseService.query(query, [valueToSave, userId]);
     }
+
+    async getHashedRefreshToken(userId: string): Promise<string | null> {
+        const query = `
+        SELECT hashed_refresh_token 
+        FROM users 
+        WHERE id = $1
+    `;
+
+        const rows = await this.databaseService.query<{ hashed_refresh_token: string }>(query, [userId]);
+
+        return rows.length > 0 ? rows[0].hashed_refresh_token : null;
+    }
+
+    async isRefreshTokenValid(userId: string, refreshToken: string): Promise<boolean> {
+        const hashedToken = await this.getHashedRefreshToken(userId);
+
+        if (!hashedToken) {
+            return false;
+        }
+
+        return await bcrypt.compare(refreshToken, hashedToken);
+    }
 }

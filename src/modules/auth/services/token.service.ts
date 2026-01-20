@@ -11,23 +11,29 @@ export class TokenService {
     ) {
     }
 
-    async verifyAccessToken(token: string): Promise<JwtPayloadInterface> {
+    async verifyAccessToken(token: string): Promise<JwtPayloadInterface | null> {
         try {
-            return await this.jwtService.verifyAsync(token, {
+            const payload = await this.jwtService.verifyAsync(token, {
                 secret: this.configService.get('JWT_ACCESS_SECRET')
             });
+
+            return payload
+
         } catch (e) {
-            throw new UnauthorizedException('Access Token invalid sau expirat');
+            return null
         }
     }
 
-    async verifyRefreshToken(token: string): Promise<JwtPayloadInterface> {
+    async verifyRefreshToken(token: string): Promise<JwtPayloadInterface | null> {
         try {
-            return await this.jwtService.verifyAsync(token, {
+            const payload = await this.jwtService.verifyAsync(token, {
                 secret: this.configService.get('JWT_REFRESH_SECRET')
-            })
+            });
+
+            return payload
+
         } catch (e) {
-            throw new UnauthorizedException('Token invalid sau expirat')
+            return null
         }
     }
 
