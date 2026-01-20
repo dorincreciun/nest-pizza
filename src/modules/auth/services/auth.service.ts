@@ -1,9 +1,9 @@
 import { ConflictException, Injectable, Logger, UnauthorizedException } from '@nestjs/common';
-import { LoginDto } from './dto/login.dto';
-import { UserService } from '../user/user.service';
+import { LoginDto } from '../dto/login.dto';
+import { UserService } from '../../user/user.service';
 import * as bcrypt from 'bcrypt';
 import { TokenService } from './token.service';
-import { CreateUserDto } from '../user/dto/create-user.dto';
+import { CreateUserDto } from '../../user/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -62,6 +62,15 @@ export class AuthService {
         return {
             tokens,
             user: safeUser,
+        };
+    }
+
+    async logout(userId: string) {
+        await this.userService.updateRefreshToken(userId, null)
+
+        return {
+            statusCode: 200,
+            message: 'Deconectare reușită!'
         };
     }
 }

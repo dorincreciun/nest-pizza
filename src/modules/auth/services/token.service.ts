@@ -1,6 +1,6 @@
 import {Injectable, UnauthorizedException} from '@nestjs/common';
 import {JwtService} from "@nestjs/jwt";
-import {JwtPayloadInterface, TokenPair, TokenTypes} from "./interfaces/jwt-payload.interface";
+import {JwtPayloadInterface, TokenPair, TokenTypes} from "../interfaces/jwt-payload.interface";
 import {ConfigService} from "@nestjs/config";
 
 @Injectable()
@@ -9,6 +9,16 @@ export class TokenService {
         private readonly configService: ConfigService,
         private readonly jwtService: JwtService
     ) {
+    }
+
+    async verifyAccessToken(token: string): Promise<JwtPayloadInterface> {
+        try {
+            return await this.jwtService.verifyAsync(token, {
+                secret: this.configService.get('JWT_ACCESS_SECRET')
+            });
+        } catch (e) {
+            throw new UnauthorizedException('Access Token invalid sau expirat');
+        }
     }
 
     async verifyRefreshToken(token: string): Promise<JwtPayloadInterface> {
@@ -26,8 +36,6 @@ export class TokenService {
             this.generateAccessToken(payload),
             this.generateRefreshToken(payload)
         ])
-
-        console.dir(accessToken, refreshToken)
 
         return {
             accessToken,
