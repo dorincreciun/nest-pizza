@@ -1,9 +1,9 @@
 import {Body, Controller, Post, Req, UseGuards} from '@nestjs/common';
-import { AuthService } from '../services/auth.service';
-import { LoginDto } from '../dto/login.dto';
-import { CreateUserDto } from '../../user/dto/create-user.dto';
+import {AuthService} from '../services/auth.service';
+import {LoginDto} from '../dto/login.dto';
 import {AuthGuard} from "../guards/auth.guard";
 import type {RequestWithUser} from "../interfaces/reuqest-with-user.interface";
+import {RegisterDto} from "../dto/register.dto";
 
 @Controller('auth')
 export class AuthController {
@@ -18,7 +18,7 @@ export class AuthController {
 
     /* --- */
     @Post('register')
-    register(@Body() dto: CreateUserDto){
+    register(@Body() dto: RegisterDto){
         return this.authService.register(dto)
     }
 

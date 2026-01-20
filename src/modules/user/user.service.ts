@@ -1,8 +1,7 @@
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from '../database/database.service';
-import { UserEntity } from './entity/user.entity';
-import * as bcrypt from 'bcrypt';
-import { CreateUserDto } from './dto/create-user.dto';
+import {Injectable} from '@nestjs/common';
+import {DatabaseService} from '../database/database.service';
+import {UserEntity} from './entity/user.entity';
+import {CreateUserDto} from './dto/create-user.dto';
 
 @Injectable()
 export class UserService {
@@ -11,7 +10,6 @@ export class UserService {
 
     async findOneBy(criteria: Partial<UserEntity>): Promise<UserEntity | null> {
         const keys = Object.keys(criteria);
-
         if (keys.length === 0) return null;
 
         const whereConditions = keys
@@ -26,7 +24,6 @@ export class UserService {
         `;
 
         const values = Object.values(criteria);
-
         const rows = await this.databaseService.query<UserEntity>(query, values);
 
         return rows.length > 0 ? rows[0] : null;
@@ -35,10 +32,14 @@ export class UserService {
     async createUser(user: CreateUserDto): Promise<UserEntity> {
         const query = `
             INSERT INTO users(username, email, password)
-            VALUES($1, $2, $3)
+            VALUES ($1, $2, $3)
             RETURNING id, email, username
-        `
-        const rows = await this.databaseService.query<UserEntity>(query, [user.username, user.email, user.password]);
+        `;
+
+        const rows = await this.databaseService.query<UserEntity>(
+            query,
+            [user.username, user.email, user.password]
+        );
 
         if (!rows || rows.length === 0) {
             throw new Error('Eroare la crearea utilizatorului în baza de date');
@@ -50,42 +51,7 @@ export class UserService {
     async updateUser(): Promise<void> {
     }
 
-    async getUserProfile(): Promise<void> {
-    }
-
-    async updateRefreshToken(userId: string, refreshToken: string | null): Promise<void> {
-        const valueToSave = refreshToken
-          ? await bcrypt.hash(refreshToken, 10)
-          : null;
-
-        const query = `
-            UPDATE users
-            SET hashed_refresh_token = $1
-            WHERE id = $2
-        `;
-
-        await this.databaseService.query(query, [valueToSave, userId]);
-    }
-
-    async getHashedRefreshToken(userId: string): Promise<string | null> {
-        const query = `
-        SELECT hashed_refresh_token 
-        FROM users 
-        WHERE id = $1
-    `;
-
-        const rows = await this.databaseService.query<{ hashed_refresh_token: string }>(query, [userId]);
-
-        return rows.length > 0 ? rows[0].hashed_refresh_token : null;
-    }
-
-    async isRefreshTokenValid(userId: string, refreshToken: string): Promise<boolean> {
-        const hashedToken = await this.getHashedRefreshToken(userId);
-
-        if (!hashedToken) {
-            return false;
-        }
-
-        return await bcrypt.compare(refreshToken, hashedToken);
+    async getUserProfile(userId: string): Promise<UserEntity | null> {
+        return this.findOneBy({id: userId});
     }
 }
